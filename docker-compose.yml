@@ -1,0 +1,66 @@
+services:
+  db:
+    image: postgres:15
+    container_name: olist-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./init:/docker-entrypoint-initdb.d:ro
+      - ./data:/data:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d postgres"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: olist-app
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      PGHOST: db
+      PGPORT: "5432"
+      PGDATABASE: postgres
+      PGUSER: postgres
+      PGPASSWORD: postgres
+      PGSCHEMA: olist
+    stdin_open: true
+    tty: true
+    # Если хочешь править код без пересборки, раскомментируй:
+    # volumes:
+    #   - ./:/app
+
+  superset:
+    image: apache/superset:latest
+    container_name: olist-superset
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      SUPERSET_SECRET_KEY: supersecretkey   # замени в проде
+      # Параметры ADMIN_* могут не сработать автоматически на оф. образе —
+      # если что, создай админа командой (см. ниже).
+      ADMIN_USERNAME: admin
+      ADMIN_FIRST_NAME: Superset
+      ADMIN_LAST_NAME: Admin
+      ADMIN_EMAIL: admin@example.com
+      ADMIN_PASSWORD: superset
+    volumes:
+      - superset_home:/app/superset_home
+    ports:
+      - "8088:8088"
+
+volumes:
+  pgdata:
+  superset_home:
