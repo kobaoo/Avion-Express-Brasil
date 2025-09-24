@@ -14,16 +14,16 @@ services:
       - ./init:/docker-entrypoint-initdb.d:ro
       - ./data:/data:ro
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d postgres"]
+      test: ["CMD-SHELL", "pg_isready -U postgres -d postgres -h 127.0.0.1"]
       interval: 5s
       timeout: 3s
-      retries: 10
+      retries: 20
 
-  app:
+  api:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: olist-app
+    container_name: olist-api
     depends_on:
       db:
         condition: service_healthy
@@ -34,32 +34,46 @@ services:
       PGUSER: postgres
       PGPASSWORD: postgres
       PGSCHEMA: olist
-    stdin_open: true
-    tty: true
-    # Если хочешь править код без пересборки, раскомментируй:
-    # volumes:
-    #   - ./:/app
+    ports:
+      - "8000:8000"
 
   superset:
-    image: apache/superset:latest
+    build:
+      context: .
+      dockerfile: Dockerfile.superset
+    image: my-superset:pg
     container_name: olist-superset
     restart: unless-stopped
     depends_on:
       db:
         condition: service_healthy
     environment:
-      SUPERSET_SECRET_KEY: supersecretkey   # замени в проде
-      # Параметры ADMIN_* могут не сработать автоматически на оф. образе —
-      # если что, создай админа командой (см. ниже).
+      SUPERSET_SECRET_KEY: "change_me_to_a_long_random_string_please"
+      SUPERSET__SQLALCHEMY_DATABASE_URI: "postgresql+psycopg2://postgres:postgres@db:5432/postgres"
       ADMIN_USERNAME: admin
       ADMIN_FIRST_NAME: Superset
       ADMIN_LAST_NAME: Admin
       ADMIN_EMAIL: admin@example.com
       ADMIN_PASSWORD: superset
+      SUPERSET_FEATURE_FLAGS: '{"SQLLAB_BACKEND_PERSISTENCE": true}'
     volumes:
       - superset_home:/app/superset_home
     ports:
       - "8088:8088"
+    command:
+      - /bin/bash
+      - -c
+      - |
+        set -e
+        superset db upgrade
+        superset fab create-admin \
+          --username $${ADMIN_USERNAME} \
+          --firstname $${ADMIN_FIRST_NAME} \
+          --lastname $${ADMIN_LAST_NAME} \
+          --email $${ADMIN_EMAIL} \
+          --password $${ADMIN_PASSWORD} || true
+        superset init
+        gunicorn -w 2 -k gthread --threads 8 --timeout 300 -b 0.0.0.0:8088 'superset.app:create_app()'
 
 volumes:
   pgdata:
