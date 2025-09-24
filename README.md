@@ -14,7 +14,7 @@
 └─ src/img/ERD_ecommerce.png
 ```
 
-![ERD](src/img/ERD_ecommerce.png)
+![ERD](img/ERD_ecommerce.png)
 
 ## Запуск
 ```bash
