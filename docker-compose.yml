@@ -19,23 +19,23 @@ services:
       timeout: 3s
       retries: 20
 
-  api:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    container_name: olist-api
-    depends_on:
-      db:
-        condition: service_healthy
-    environment:
-      PGHOST: db
-      PGPORT: "5432"
-      PGDATABASE: postgres
-      PGUSER: postgres
-      PGPASSWORD: postgres
-      PGSCHEMA: olist
-    ports:
-      - "8000:8000"
+  # api:
+  #   build:
+  #     context: .
+  #     dockerfile: Dockerfile
+  #   container_name: olist-api
+  #   depends_on:
+  #     db:
+  #       condition: service_healthy
+  #   environment:
+  #     PGHOST: db
+  #     PGPORT: "5432"
+  #     PGDATABASE: postgres
+  #     PGUSER: postgres
+  #     PGPASSWORD: postgres
+  #     PGSCHEMA: olist
+  #   ports:
+  #     - "8000:8000"
 
   superset:
     build:
