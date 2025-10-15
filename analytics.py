@@ -86,25 +86,25 @@ LIMIT 30;   -- 10 категорий * 3 года
     """
 
 Q_BARH_REVIEWS = """
-WITH scored AS (
-  SELECT COALESCE(t.product_category_name_english, p.product_category_name) AS category,
-         orv.review_score
-  FROM order_reviews orv
-  JOIN orders o ON orv.order_id = o.order_id
-  JOIN order_items oi ON o.order_id = oi.order_id
-  JOIN products p ON oi.product_id = p.product_id
-  LEFT JOIN product_category_name_translation t
-    ON t.product_category_name = p.product_category_name
-  WHERE orv.review_score IS NOT NULL
-)
-SELECT category,
-       ROUND(AVG(review_score)::NUMERIC, 3) AS avg_score,
-       COUNT(*) AS n_reviews
-FROM scored
-GROUP BY category
-HAVING COUNT(*) >= 50
-ORDER BY avg_score DESC, n_reviews DESC
-LIMIT 10;
+    WITH scored AS (
+    SELECT COALESCE(t.product_category_name_english, p.product_category_name) AS category,
+            orv.review_score
+    FROM order_reviews orv
+    JOIN orders o ON orv.order_id = o.order_id
+    JOIN order_items oi ON o.order_id = oi.order_id
+    JOIN products p ON oi.product_id = p.product_id
+    LEFT JOIN product_category_name_translation t
+        ON t.product_category_name = p.product_category_name
+    WHERE orv.review_score IS NOT NULL
+    )
+    SELECT category,
+        ROUND(AVG(review_score)::NUMERIC, 3) AS avg_score,
+        COUNT(*) AS n_reviews
+    FROM scored
+    GROUP BY category
+    HAVING COUNT(*) >= 50
+    ORDER BY avg_score DESC, n_reviews DESC
+    LIMIT 10;
 """
 Q_SCATTER = """
 WITH per_order AS (
@@ -122,19 +122,19 @@ WHERE delivery_days BETWEEN 0 AND 60;
 """
 
 Q_ORDERS_BY_YEARS = """
-WITH monthly AS (
-    SELECT
-        DATE_TRUNC('month', order_purchase_timestamp) AS month_start,
-        EXTRACT(YEAR FROM order_purchase_timestamp)::int AS year,
-        COUNT(*)::int AS order_count
-    FROM orders
-    WHERE order_purchase_timestamp IS NOT NULL
-        AND EXTRACT(YEAR FROM order_purchase_timestamp) BETWEEN 2016 AND 2018
-    GROUP BY 1, 2
-)
-SELECT month_start::date AS month_start, year, order_count
-FROM monthly
-ORDER BY month_start, year;
+    WITH monthly AS (
+        SELECT
+            DATE_TRUNC('month', order_purchase_timestamp) AS month_start,
+            EXTRACT(YEAR FROM order_purchase_timestamp)::int AS year,
+            COUNT(*)::int AS order_count
+        FROM orders
+        WHERE order_purchase_timestamp IS NOT NULL
+            AND EXTRACT(YEAR FROM order_purchase_timestamp) BETWEEN 2016 AND 2018
+        GROUP BY 1, 2
+    )
+    SELECT month_start::date AS month_start, year, order_count
+    FROM monthly
+    ORDER BY month_start, year;
 """
 
 # ----------------------------

@@ -1,6 +1,5 @@
 import psycopg2
-
-# Подключение к базе
+    
 conn = psycopg2.connect(
     host="localhost", port="5432",
     dbname="postgres", user="postgres", password="postgres", options='-c search_path=olist'
