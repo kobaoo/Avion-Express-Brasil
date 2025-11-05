@@ -1,0 +1,85 @@
+version: '3.8'
+
+services:
+  prometheus:
+    image: prom/prometheus
+    container_name: prometheus
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus-data:/prometheus
+    ports:
+      - "9090:9090"
+    depends_on:
+      - node_exporter
+      - postgres_exporter
+      - custom_exporter
+
+  grafana:
+    image: grafana/grafana
+    container_name: grafana
+    ports:
+      - "3000:3000"
+    volumes:
+      - grafana-data:/var/lib/grafana
+    depends_on:
+      - prometheus
+      
+  db:
+    image: postgres:15
+    container_name: olist-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+  postgres_exporter:
+    image: prometheuscommunity/postgres-exporter
+    container_name: postgres_exporter
+    environment:
+      DATA_SOURCE_NAME: "postgresql://postgres:postgres@db:5432/postgres?sslmode=disable"
+      PG_EXPORTER_EXTEND_QUERY_PATH: /etc/postgres_exporter/queries.yml
+    volumes:
+      - ./queries.yml:/etc/postgres_exporter/queries.yml:ro
+    ports:
+      - "9187:9187"
+    depends_on:
+      - db
+  
+  node_exporter:
+    image: prom/node-exporter
+    container_name: node_exporter
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        echo "⏳ Waiting 5s before starting Node Exporter..." \
+        && sleep 5 \
+        && /bin/node_exporter --collector.textfile.directory=/var/lib/node_exporter/textfile
+    volumes:
+      - ./node-textfiles:/var/lib/node_exporter/textfile:ro
+    ports:
+      - "9100:9100"
+    depends_on:
+      - db
+
+  custom_exporter:
+      build: .
+      container_name: custom_exporter
+      restart: unless-stopped
+      command: ["python", "custom_exporter.py"]
+      ports:
+        - "9101:9101"
+      environment:
+        OPENWEATHER_API_KEY: "6bea3a864d4087d591a70398c28feb07"
+        OPENWEATHER_CITY: "Astana"
+        OPENWEATHER_LAT: "51.1694"
+        OPENWEATHER_LON: "71.4491"
+
+volumes:
+  pgdata:
+  prometheus-data:
+  grafana-data:

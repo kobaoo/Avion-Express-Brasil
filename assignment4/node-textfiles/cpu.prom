@@ -1,0 +1,7 @@
+# HELP cpu_temperature_celsius Fake CPU temperature
+# TYPE cpu_temperature_celsius gauge
+cpu_temperature_celsius 58.3
+
+# HELP battery_percent Fake laptop battery capacity
+# TYPE battery_percent gauge
+battery_percent 77

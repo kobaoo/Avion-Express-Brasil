@@ -55,6 +55,7 @@ services:
       ADMIN_LAST_NAME: Admin
       ADMIN_EMAIL: admin@example.com
       ADMIN_PASSWORD: superset
+      MAPBOX_API_KEY: "pk.eyJ1IjoiZG9lb2hqbiIsImEiOiJjbWd0NnBpN2MwMTMzMmpzZndqa2pzcm9vIn0._SDO3LjHUwQbVgSTY_Hvcg"
       SUPERSET_FEATURE_FLAGS: '{"SQLLAB_BACKEND_PERSISTENCE": true}'
     volumes:
       - superset_home:/app/superset_home
